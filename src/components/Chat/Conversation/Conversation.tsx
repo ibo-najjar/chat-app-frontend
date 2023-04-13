@@ -3,14 +3,21 @@ import {
   CreateConversationInput,
   SearchUsersData,
   SearchUsersInput,
+  SearchNearUsersData,
+  SearchNearUsersInput,
 } from "@/src/util/types";
 import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import { Session } from "next-auth";
 import UserOperations from "../../../graphql/operations/user";
 import ConversationOperations from "../../../graphql/operations/conversation";
-import { calculateDistance } from "../../../util/distance";
 import { useRouter } from "next/router";
-import { Key, useEffect } from "react";
+import { useEffect } from "react";
+import ConversationItem from "./ConversationItem";
+import TextSkeleton from "../../Skeleton/TextSkeleton";
+import ConversationSkeleton from "../../Skeleton/ConversationSkeleton";
+import { AiOutlineSearch } from "react-icons/ai";
+import { User } from "@prisma/client";
+import CreateConversationModal from "../../Modals/CreateConversationModal";
 
 const ConversationsWrapper: React.FC<IConversationsWrapperProps> = ({
   session,
@@ -40,16 +47,14 @@ const ConversationsWrapper: React.FC<IConversationsWrapperProps> = ({
           };
         }
       ) => {
-        //console.log("subscriptionData", subscriptionData);
-        //console.log("prev", prev);
         if (!subscriptionData.data) return prev;
-        //console.log("SUBSCRIPTIONDATA", subscriptionData);
+
         const newConversation = subscriptionData.data.conversationCreated;
-        //console.log("newConversation", newConversation);
-        const returnValue = Object.assign({}, prev, {
+
+        const returnValue: any = Object.assign({}, prev, {
           getConversations: [...prev.getConversations, newConversation],
         });
-        //console.log("returnValue", returnValue);
+
         return returnValue;
       },
     });
@@ -59,6 +64,12 @@ const ConversationsWrapper: React.FC<IConversationsWrapperProps> = ({
     // execute the subscription on mount
     subscribeToNewConversations();
     seacrhUsers({ variables: { username: "" } });
+    searchNearUsers({
+      variables: {
+        latitude: session?.user?.latitude,
+        longitude: session?.user?.longitude,
+      },
+    });
   }, []);
 
   // User search
@@ -67,9 +78,22 @@ const ConversationsWrapper: React.FC<IConversationsWrapperProps> = ({
     SearchUsersInput
   >(UserOperations.Queries.searchUsers);
 
+  const [searchNearUsers, { data: nearData, loading: nearLoading }] =
+    useLazyQuery<SearchNearUsersData, SearchNearUsersInput>(
+      UserOperations.Queries.searchNearUsers
+    );
+  //console.log("nearData", nearData, nearLoading);
+
   const onSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     seacrhUsers({ variables: { username: value } });
+    searchNearUsers({
+      variables: {
+        latitude: session?.user?.latitude,
+        longitude: session?.user?.longitude,
+      },
+    });
+    //console.log(nearData);
   };
 
   // Create conversation
@@ -99,55 +123,51 @@ const ConversationsWrapper: React.FC<IConversationsWrapperProps> = ({
   };
 
   const onConversationClick = (conversationId: string) => {
-    router.push({ query: { conversationId } });
-    // mark as read
+    router.push({ query: { conversationId }, pathname: "/" });
   };
 
+  if (!convData?.getConversations || convLoading) {
+    return (
+      <div className="w-full overflow-auto">
+        <ConversationSkeleton />
+      </div>
+    );
+  }
+
+  const sorted = convData.getConversations
+    .slice()
+    .sort((a: any, b: any) => b.updatedAt - a.updatedAt);
+
+  console.log("search", data?.searchUsers);
+
   return (
-    <div className="flex flex-col min-h-screen bg-primary items-center">
-      <div className="px-3 py-4 flex-1 space-y-2">
-        <h3>Search users</h3>
-        <input
-          className=" rounded-md bg-secondary text-white outline-none  w-52 px-2"
-          onChange={onSearch}
-        />
-        {data?.searchUsers?.map((user) => (
-          <div key={user.id} className="grid grid-cols-2 items-center">
-            <div className="flex items-center justify-center flex-col">
-              <div>{user.username}</div>
-              <div>
-                {calculateDistance(
-                  parseFloat(user.latitude),
-                  parseFloat(user.longitude),
-                  session
-                ).toFixed(0)}{" "}
-                km
-              </div>
-            </div>
-            <button
-              className="button"
-              onClick={() => onCreateConversation(user.id)}
-            >
-              Send
-            </button>
-          </div>
-        ))}
+    <div className="h-full flex justify-start overflow-x-hidden flex-col">
+      <div className="px-3 py-2">
+        <label
+          htmlFor="search"
+          className="flex items-center w-full px-2 py-1 bg-neutral-900 border border-neutral-800 rounded-md focus:outline-none focus:ring-0"
+        >
+          <AiOutlineSearch className="text-neutral-500 text-md flex-shrink-0" />
+          <input
+            type="text"
+            placeholder="Search"
+            className="bg-neutral-900 focus:outline-none focus:ring-0 placeholder-neutral-500 pl-2 w-full"
+            id="search"
+            autoComplete="off"
+          />
+        </label>
       </div>
-      <div className="px-2 py-3 space-y-1">
-        {convData?.getConversations?.map((conversation: any) => (
-          <button
-            className="button w-full"
+      <div className="overflow-y-auto">
+        {sorted.map((conversation: any) => (
+          <ConversationItem
             key={conversation.id}
-            onClick={() => onConversationClick(conversation.id)}
-          >
-            {conversation.participants.map((participant: any) =>
-              participant.user.username === session.user.username
-                ? null
-                : participant.user.username
-            )}
-          </button>
+            conversation={conversation}
+            session={session}
+            onConversationClick={onConversationClick}
+          />
         ))}
       </div>
+      <CreateConversationModal session={session} />
     </div>
   );
 };

@@ -24,7 +24,7 @@ export default NextAuth({
   callbacks: {
     // fire whenever session is checked
     async session({ session, token, user }) {
-      console.log("in session callback");
+      //console.log("in session callback");
       return { ...session, user: { ...session.user, ...user } };
     },
   },

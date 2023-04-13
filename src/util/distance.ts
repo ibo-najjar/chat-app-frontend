@@ -1,11 +1,13 @@
+import { Session } from "next-auth";
+
 function deg2rad(degrees: number) {
   var pi = Math.PI;
   return degrees * (pi / 180);
 }
 
-export const calculateDistance = (lat1: number, lon1: number, session: any) => {
-  const lat2 = parseFloat(session.user.latitude);
-  const lon2 = parseFloat(session.user.longitude);
+const calculateDistance = (lat1: number, lon1: number, session: any) => {
+  const lat2 = session.user.latitude;
+  const lon2 = session.user.longitude;
   const R = 6371; // Radius of the earth in km
   const dLat = deg2rad(lat2 - lat1); // deg2rad below
   const dLon = deg2rad(lon2 - lon1);
@@ -19,3 +21,4 @@ export const calculateDistance = (lat1: number, lon1: number, session: any) => {
   const d = R * c; // Distance in km
   return d;
 };
+export default calculateDistance;

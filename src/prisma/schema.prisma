@@ -42,8 +42,10 @@ model User {
   username      String?   @unique
   emailVerified DateTime?
   image         String?
-  latitude      String?
-  longitude     String?
+  imageUrl    String?
+  latitude      Float?
+  longitude     Float?
+  bio           String?
   accounts      Account[]
   sessions      Session[]
 }

@@ -32,7 +32,7 @@ const Auth: React.FunctionComponent<IAuthProps> = ({
       const { data } = await createUsername({
         variables: { username },
       });
-      console.log(data);
+      //console.log(data);
       if (!data?.createUsername) {
         throw new Error("Error creating username");
       }
@@ -50,7 +50,7 @@ const Auth: React.FunctionComponent<IAuthProps> = ({
 
         throw new Error(error);
       }
-      console.log("success");
+      //console.log("success");
       reloadSession();
     } catch (e) {
       console.log("onSumbit error", e);
@@ -58,7 +58,7 @@ const Auth: React.FunctionComponent<IAuthProps> = ({
   };
   //console.log("session", session);
   return (
-    <div className="min-h-screen flex justify-center items-center flex-col space-y-5">
+    <div className="flex justify-center items-center flex-col space-y-5 mx-auto">
       {session ? (
         <>
           <div className="center flex-col space-y-2">
@@ -87,10 +87,6 @@ const Auth: React.FunctionComponent<IAuthProps> = ({
         <>
           <div className="center flex-col">
             <h1 className="text-3xl font-medium">Choose a way to Sign-In</h1>
-            <div className=" text-ptext center space-x-1">
-              <GiDialPadlock />
-              <p>we do not save your login information</p>
-            </div>
           </div>
           <button
             onClick={() => {

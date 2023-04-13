@@ -8,7 +8,8 @@ declare module "next-auth" {
   interface User {
     id: string;
     username: string;
-    longitude: string;
-    latitude: string;
+    longitude: number;
+    latitude: number;
+    imageUrl?: string;
   }
 }

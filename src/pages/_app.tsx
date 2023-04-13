@@ -1,9 +1,11 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { SessionProvider } from "next-auth/react";
-import { ApolloProvider } from "@apollo/client";
+import { ApolloProvider, useMutation } from "@apollo/client";
 import { client } from "../graphql/apollo-client";
 import { Toaster } from "react-hot-toast";
+import Layout from "../components/Layout";
+import LocationProvider from "../lib/LocationProvider";
 
 export default function App({
   Component,
@@ -12,7 +14,11 @@ export default function App({
   return (
     <ApolloProvider client={client}>
       <SessionProvider session={session}>
-        <Component {...pageProps} />
+        <LocationProvider session={session}>
+          <Layout>
+            <Component {...pageProps} />
+          </Layout>
+        </LocationProvider>
         <Toaster />
       </SessionProvider>
     </ApolloProvider>
